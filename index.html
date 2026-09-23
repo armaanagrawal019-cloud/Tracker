@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111827">
+<title>JEE Chapter Tracker</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f4f6f8;color:#111827}
+header{background:#111827;color:white;padding:20px 16px;position:sticky;top:0;z-index:10;box-shadow:0 3px 14px #0002}
+h1{margin:0;font-size:23px}
+.sub{opacity:.75;font-size:13px;margin-top:5px}
+.wrap{max-width:1050px;margin:auto;padding:16px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 0 16px}
+.stat{background:white;border-radius:14px;padding:13px;box-shadow:0 2px 9px #0000000d}
+.stat b{font-size:20px}.stat span{display:block;color:#6b7280;font-size:12px;margin-top:2px}
+.tabs{display:flex;gap:8px;overflow:auto;margin-bottom:14px}
+.tab{border:0;background:white;padding:10px 15px;border-radius:10px;font-weight:700;white-space:nowrap;cursor:pointer}
+.tab.active{background:#111827;color:white}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+button{cursor:pointer}
+.control{border:1px solid #d1d5db;background:white;border-radius:9px;padding:9px 12px}
+.section{background:white;border-radius:15px;margin-bottom:15px;overflow:hidden;box-shadow:0 2px 9px #0000000b}
+.section-title{padding:13px 15px;background:#eef2f7;font-weight:800;display:flex;justify-content:space-between}
+.chapter{padding:13px 14px;border-top:1px solid #edf0f3}
+.chapter-name{font-weight:650;margin-bottom:10px}
+.checks{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+.check{border:1px solid #e5e7eb;border-radius:9px;padding:8px 5px;background:#fafafa;text-align:center;font-size:12px;cursor:pointer;user-select:none}
+.check input{accent-color:#111827;margin-right:5px;vertical-align:middle}
+.check:has(input:checked){background:#e9eef5;border-color:#9ca3af;font-weight:700}
+.progress{height:6px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin-top:8px}
+.bar{height:100%;background:#111827;width:0}
+.hidden{display:none}
+.danger{color:#b91c1c}
+@media(max-width:650px){.checks{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:1fr 1fr}.stat:last-child{grid-column:1/-1}}
+</style>
+
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="JEE Tracker">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+</head>
+<body>
+<header>
+  <div class="wrap" style="padding:0">
+    <h1>JEE Chapter Tracker</h1>
+    <div class="sub">Theory • Module • Extra • PYQs • Test — your progress stays saved on this device.</div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="stats">
+    <div class="stat"><b id="done">0</b><span>Completed checkpoints</span></div>
+    <div class="stat"><b id="total">0</b><span>Total checkpoints</span></div>
+    <div class="stat"><b id="percent">0%</b><span>Overall progress</span></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="Chemistry">Chemistry</button>
+    <button class="tab" data-tab="Mathematics">Mathematics</button>
+    <button class="tab" data-tab="Physics">Physics</button>
+  </div>
+
+  <div class="controls">
+    <button class="control" id="clearSubject">Clear current subject</button>
+    <button class="control" id="export">Export backup</button>
+    <label class="control">Import backup <input id="import" type="file" accept=".json" hidden></label>
+  </div>
+
+  <div id="app"></div>
+</main>
+
+<script>
+const subjects = {
+Chemistry: [
+["Class XI","Aldehydes, Ketones & Carboxylic Acids"], // kept in selected list below; section labels are cosmetic
+["High Weightage","Coordination Compounds"],["High Weightage","d & f-Block Elements"],["High Weightage","Solutions"],
+["High Weightage","Equilibrium"],["High Weightage","Amines"],["High Weightage","s-Block Elements"],
+["High Weightage","Biomolecules"],["High Weightage","p-Block Elements (Group 15–18)"],["High Weightage","Chemical Thermodynamics & Energetics"],
+["High Weightage","Chemical Kinetics"],["High Weightage","Alcohols, Phenols & Ethers"],["High Weightage","General Principles & Processes of Isolation of Metals"],
+["High Weightage","Atomic Structure"],["High Weightage","Chemical Bonding & Molecular Structure"],["High Weightage","Electrochemistry"],
+["High Weightage","Hydrocarbons"],["High Weightage","Environmental Chemistry"],["High Weightage","Surface Chemistry"],
+["High Weightage","Some Basic Concepts of Chemistry"],["High Weightage","Hydrogen"],["High Weightage","Haloalkanes & Haloarenes"]
+],
+Mathematics: [
+["Selected for 80% coverage","3D Geometry"],["Selected for 80% coverage","Sequences & Series"],
+["Selected for 80% coverage","Limit, Continuity & Differentiability"],["Selected for 80% coverage","Definite Integration"],
+["Selected for 80% coverage","Binomial Theorem"],["Selected for 80% coverage","Complex Numbers"],
+["Selected for 80% coverage","Applications of Derivatives"],["Selected for 80% coverage","Vector Algebra"],
+["Selected for 80% coverage","Differential Equations"],["Selected for 80% coverage","Determinants"],
+["Selected for 80% coverage","Permutations & Combinations"],["Selected for 80% coverage","Matrices"],
+["Selected for 80% coverage","Quadratic Equations"],["Selected for 80% coverage","Circles"],
+["Selected for 80% coverage","Probability"],["Selected for 80% coverage","Statistics"],
+["Selected for 80% coverage","Application of Integrals / Area Under Curves"],["Selected for 80% coverage","Straight Lines"],
+["Selected for 80% coverage","Parabola"],["Selected for 80% coverage","Ellipse"]
+],
+Physics: [
+["Mechanics","Units & Measurements"],["Mechanics","Kinematics"],["Mechanics","Laws of Motion"],["Mechanics","Work, Energy & Power"],
+["Mechanics","System of Particles & Centre of Mass"],["Mechanics","Rotational Motion"],["Mechanics","Gravitation"],
+["Properties of Matter","Properties of Solids & Fluids"],["Properties of Matter","Thermal Properties of Matter"],
+["Thermodynamics","Thermodynamics"],["Kinetic Theory","Kinetic Theory of Gases"],
+["Oscillations & Waves","Oscillations"],["Oscillations & Waves","Waves"],
+["Electrostatics","Electric Charges & Fields"],["Electrostatics","Electrostatic Potential & Capacitance"],
+["Current Electricity","Current Electricity"],["Magnetism","Moving Charges & Magnetism"],["Magnetism","Magnetism & Matter"],
+["EMI & AC","Electromagnetic Induction"],["EMI & AC","Alternating Current"],
+["Electromagnetic Waves","Electromagnetic Waves"],["Optics","Ray Optics & Optical Instruments"],
+["Optics","Wave Optics"],["Modern Physics","Dual Nature of Matter & Radiation"],
+["Modern Physics","Atoms"],["Modern Physics","Nuclei"],["Modern Physics","Semiconductor Electronics"],
+["Experimental Physics","Experimental Skills"]
+]
+};
+
+const steps=["Theory","Module","Extra","PYQs","Test"];
+let state=JSON.parse(localStorage.getItem("jeeChapterTracker_v1")||"{}");
+let current="Chemistry";
+
+function key(subject, chapter, step){return subject+"|"+chapter+"|"+step}
+function save(){localStorage.setItem("jeeChapterTracker_v1",JSON.stringify(state)); updateStats()}
+function render(){
+  const app=document.getElementById("app"); app.innerHTML="";
+  const groups={};
+  subjects[current].forEach(([g,c])=>(groups[g]??=[]).push(c));
+  for(const [group, chapters] of Object.entries(groups)){
+    const sec=document.createElement("div"); sec.className="section";
+    sec.innerHTML=`<div class="section-title"><span>${group}</span><span>${chapters.length} chapters</span></div>`;
+    chapters.forEach(ch=>{
+      const row=document.createElement("div"); row.className="chapter";
+      row.innerHTML=`<div class="chapter-name">${ch}</div><div class="checks"></div>`;
+      const checks=row.querySelector(".checks");
+      steps.forEach(step=>{
+        const label=document.createElement("label"); label.className="check";
+        const input=document.createElement("input"); input.type="checkbox"; input.checked=!!state[key(current,ch,step)];
+        input.addEventListener("change",()=>{state[key(current,ch,step)]=input.checked;save();});
+        label.append(input,document.createTextNode(step)); checks.appendChild(label);
+      });
+      sec.appendChild(row);
+    });
+    app.appendChild(sec);
+  }
+  updateStats();
+}
+function updateStats(){
+ let done=0,total=0;
+ for(const subject of Object.keys(subjects)) for(const [,ch] of subjects[subject]) for(const step of steps){
+   total++; if(state[key(subject,ch,step)]) done++;
+ }
+ document.getElementById("done").textContent=done;
+ document.getElementById("total").textContent=total;
+ document.getElementById("percent").textContent=Math.round(done/total*100)+"%";
+}
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+ document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active")); t.classList.add("active");
+ current=t.dataset.tab; render();
+});
+document.getElementById("clearSubject").onclick=()=>{
+ if(confirm("Clear all ticks for "+current+"?")){for(const [,ch] of subjects[current]) for(const step of steps) delete state[key(current,ch,step)];save();render();}
+};
+document.getElementById("export").onclick=()=>{
+ const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+ const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="jee-tracker-backup.json";a.click();URL.revokeObjectURL(a.href);
+};
+document.getElementById("import").onchange=e=>{
+ const file=e.target.files[0];if(!file)return;
+ const r=new FileReader();r.onload=()=>{try{state=JSON.parse(r.result);save();render();alert("Backup restored.");}catch{alert("Invalid backup file.");}};r.readAsText(file);
+};
+render();
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js"));
+}
+</script>
+</body>
+</html>
