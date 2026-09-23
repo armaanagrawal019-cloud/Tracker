@@ -2,7 +2,7 @@
   "name": "JEE Chapter Tracker",
   "short_name": "JEE Tracker",
   "description": "JEE progress tracker for Theory, Module, Extra, PYQs and Tests.",
-  "start_url": "./index.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
